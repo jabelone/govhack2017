@@ -1,0 +1,59 @@
+{
+  "id": "46e39682-d04e-4b19-918b-0b9f376183a2",
+  "timestamp": "2017-07-29T20:01:35.871Z",
+  "lang": "en",
+  "result": {
+    "source": "agent",
+    "resolvedQuery": "what events are on today",
+    "action": "get_event",
+    "actionIncomplete": false,
+    "parameters": {
+      "date-and-period": "on today",
+      "event_type": []
+    },
+    "contexts": [
+      {
+        "name": "event",
+        "parameters": {
+          "date-and-period": "on today",
+          "event_type": [],
+          "date-and-period.original": "on today",
+          "event_type.original": ""
+        },
+        "lifespan": 5
+      }
+    ],
+    "metadata": {
+      "intentId": "dee8d527-e2a8-46ea-aac5-2ff36bc06be4",
+      "webhookUsed": "false",
+      "webhookForSlotFillingUsed": "false",
+      "intentName": "get_event"
+    },
+    "fulfillment": {
+      "speech": "This event matches your request. It's on on today Check out the link here: https://www.brisbane.qld.gov.au/whats-on/event/queensland-music-festival",
+      "messages": [
+        {
+          "type": 0,
+          "platform": "facebook",
+          "speech": "This event matches your request.  It's on on today. Check out the link here: https://www.brisbane.qld.gov.au/whats-on/event/queensland-music-festival"
+        },
+        {
+          "type": "link_out_chip",
+          "platform": "google",
+          "destinationName": "This event matches your request.  It's on on today. Check out the link here:",
+          "url": "https://www.brisbane.qld.gov.au/whats-on/event/queensland-music-festival"
+        },
+        {
+          "type": 0,
+          "speech": "This event matches your request.  It's on on today Check out the link here: https://www.brisbane.qld.gov.au/whats-on/event/queensland-music-festival"
+        }
+      ]
+    },
+    "score": 0.6100000143051147
+  },
+  "status": {
+    "code": 200,
+    "errorType": "success"
+  },
+  "sessionId": "6aef3434-906c-4d4a-84e8-f9815d6d2487"
+}

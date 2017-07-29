@@ -1,0 +1,11 @@
+{
+  "name": "brisbanebot",
+  "version": "1.0.0",
+  "description": "Discover Brisbane Bot",
+  "main": "handler.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
