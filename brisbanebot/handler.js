@@ -3,6 +3,16 @@
 let parser = require('rss-parser');
 let striptags = require('striptags');
 
+let imageUrls = [
+  'https://www.brisbane.qld.gov.au/sites/default/files/styles/event_hero/public/trumba/events/dgc17d3lpxtdeaw-uedae-0y_2.jpg',
+  'https://www.brisbane.qld.gov.au/sites/default/files/styles/event_hero/public/trumba/events/dgc1wvuuwdrhpeamo94dstga_9.jpg',
+  'https://www.brisbane.qld.gov.au/sites/default/files/styles/event_hero/public/trumba/events/dgcpn0lp6w-uyn0fy5e5irzg_9.jpg',
+  'https://www.brisbane.qld.gov.au/sites/default/files/styles/event_hero/public/trumba/events/dgdylvvvplx9ro2x1czyfo09_3.jpg',
+  'https://www.brisbane.qld.gov.au/sites/default/files/styles/event_hero/public/trumba/events/dgbmnz7stgbxmde0xs-ynns0.jpg',
+  'https://www.brisbane.qld.gov.au/sites/default/files/styles/event_hero/public/trumba/events/dganywukw5csavfypeyfjyjj_1.jpg',
+  'https://www.brisbane.qld.gov.au/sites/default/files/styles/event_hero/public/trumba/events/dgdlk1nvwpuhzo1q7r4r8qo_6.jpg'
+];
+
 let feedUrls = {
     activeParks: "http://www.trumba.com/calendars/active-parks.rss",
     classesWorkshops: "http://www.trumba.com/calendars/type.rss?filterview=classses",
@@ -33,9 +43,10 @@ function parseRSS(url) {
   return new Promise(function(resolve,reject){
       let options = {
         customFields: {
-          item: ['category']
+          feed: [['Event image', 'image']]
         }
       }
+      
       // Grab and parse the RSS feed
       parser.parseURL(url, options, function(err, parsed) {
           // Print the title of this rss feed
@@ -61,8 +72,7 @@ function parseRSS(url) {
               }
           });
           let random = Math.floor(Math.random() * items.length);
-          console.log(random);
-          console.log(items[random].category)
+          console.log("Picked: " + items[random].category)
           resolve(items[random]);
       });
     });
@@ -70,6 +80,7 @@ function parseRSS(url) {
 
 module.exports.hello = (event, context, finalCallback) => {
   let entities = JSON.parse(event.body).result.parameters;
+  let apirequest = JSON.parse(event.body);
   let body = {
     "speech": "Sorry, please try saying that again.",
     "displayText": "Sorry, please try saying that again.",
@@ -82,16 +93,94 @@ module.exports.hello = (event, context, finalCallback) => {
     body: JSON.stringify(body),
   };
 
+  console.log("Request Data:\n" + apirequest);
+
+  let capabilities = apirequest.originalRequest.data.surface.capabilities[0].name;
+
   if (entities.event_type === undefined || entities.event_type.length == 0) {
     console.log("no type was specified. running with all");
     
+    let simple_response = {
+      'simpleResponse': {
+        'textToSpeech': "Here you go, I found one for you.",
+        'displayText': "Here's some info.",
+      }
+    };
+
+    let simple_response_links = {
+      'simpleResponse': {
+        'textToSpeech': "Council provided an incorrect link. Click the search button below to manually search for it on their website.",
+        'displayText': "Unfortunately council has provided an incorrect link for this event.",
+      }
+    };
+
+    let url_button = {
+      "title": "Search for this event",
+      "openUrlAction": {
+        "url": "https://www.brisbane.qld.gov.au/whats-on",
+      },
+    }
+
+    let card_response = {
+      "basicCard": {
+        "title": "Unkown Title",
+        "formattedText": "Unknown Description",
+        "image": {
+          "url": "http://i0.kym-cdn.com/entries/icons/mobile/000/005/608/nyan-cat-01-625x450.jpg",
+          "accessibilityText": "NYAN CAT"
+        },
+        "buttons": [url_button]
+      }
+    }
+
+    let rand = Math.floor(Math.random() * imageUrls.length);
+    card_response.basicCard.image.url = imageUrls[rand];
+    console.log("image: " + imageUrls[rand]);
+
+    let resp = {
+      'data': {
+        'google': {
+          'expectUserResponse': true,
+          'isSsml': false,
+          'noInputPrompts': [],
+          'richResponse': {
+            'items': [
+              simple_response, simple_response_links, card_response, 
+            ],
+            'suggestions': [
+              //{ 'title': 'Send me a link' }
+            ]
+          },
+          'speech': {
+            "textToSpeech": 'default_response',
+            "ssml": 'default_response',
+            "displayText": 'default_response',
+          }
+        }
+      }
+    }
+
     let all = parseRSS(feedUrls.all);
     all.then(function(res) { // success
       console.log('done - event - success');
       console.log('returned: ' + res)
-      body.speech = "I found an event called " + res.title + ". Here is a full description: " + striptags(res.shortDescription.replace(/&nbsp;/gi, '').replace(/&ndash;/gi, '')).split(".")[0] + ". Follow the link for more information.";
-      body.displayText = "I found an event called " + res.title + ". Follow the link for more info: " + res.link;
-      response.body = JSON.stringify(body);
+      let description = res.shortDescription.replace(/&nbsp;/gi, '').replace(/&ndash;/gi, '').split(".")[0];
+      description += ".";
+      //description = description.replace(/(\d:\d{1,2})\d{1,2}/g, "$& to ");
+      //console.log("regex: " + description.search(/(\d:\d{1,2})\d{1,2}/g));
+      let title = res.title;
+      let link = res.link;
+      let image = res.image;
+
+      // Build the response
+      card_response.basicCard.formattedText = description;
+      card_response.basicCard.title = title;
+      //card_response.basicCard.image = image;
+      //url_button.openUrlAction.url = link;
+      resp.data.google.speech.displayText = "Title: " + title + " Description: " + description + ".";
+      resp.data.google.speech.textToSpeech = "I found one for you.  Check your email for the link.  It's called " + title + ".";
+
+      response.body = JSON.stringify(resp);
       finalCallback(null, response);
     }, function() { // failure
       console.log('done - event - failure');
