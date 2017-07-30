@@ -31,41 +31,48 @@ let feedUrls = {
 
 function parseRSS(url) {
   return new Promise(function(resolve,reject){
-        // Grab and parse the RSS feed
-        parser.parseURL(url, function(err, parsed) {
-            // Print the title of this rss feed
-            console.log(parsed.feed.title);
+      let options = {
+        customFields: {
+          item: ['category']
+        }
+      }
+      // Grab and parse the RSS feed
+      parser.parseURL(url, options, function(err, parsed) {
+          // Print the title of this rss feed
+          console.log(parsed.feed.title);
 
-            let items = [];
+          let items = [];
 
-            // Loop through each RSS feed item
-            parsed.feed.entries.forEach(function(entry) {
-                // If it's an article that mentions keyword
-                if (true) { //entry.content.indexOf(keyword) > -1
-                    //console.log(entry.title + ":");
-                    //console.log(entry.contentSnippet);
-                    //console.log("More info: " + entry.link + "\n");
+          // Loop through each RSS feed item
+          parsed.feed.entries.forEach(function(entry) {
+              // If it's an article that mentions keyword
+              if (true) { //entry.content.indexOf(keyword) > -1
+                  console.log(entry.title + ":");
+                  //console.log(entry.contentSnippet);
+                  console.log("More info: " + entry.link + "\n");
 
-                    let item = {title:striptags(entry.title),
-                        shortDescription:striptags(entry.contentSnippet),
-                        longDescription:striptags(entry.content),
-                        link:striptags(entry.link)
-                    };
+                  let item = {title:striptags(entry.title),
+                      shortDescription:striptags(entry.contentSnippet),
+                      longDescription:striptags(entry.content),
+                      link:striptags(entry.link)
+                  };
 
-                    items.push(item);
-                }
-            });
-            resolve(items);
-        });
+                  items.push(item);
+              }
+          });
+          let random = Math.floor(Math.random() * items.length);
+          console.log(random);
+          console.log(items[random].category)
+          resolve(items[random]);
+      });
     });
 }
 
 module.exports.hello = (event, context, finalCallback) => {
-  let feeds = "heck";
   let entities = JSON.parse(event.body).result.parameters;
   let body = {
-    "speech": "Speech",
-    "displayText": "Displayed",
+    "speech": "Sorry, please try saying that again.",
+    "displayText": "Sorry, please try saying that again.",
     "data": {},
     "contextOut": [],
     "source": "BCC Live Event Feeds"
@@ -79,8 +86,11 @@ module.exports.hello = (event, context, finalCallback) => {
     console.log("no type was specified. running with all");
     
     let all = parseRSS(feedUrls.all);
-    all.then(function() { // success
+    all.then(function(res) { // success
       console.log('done - event - success');
+      console.log('returned: ' + res)
+      body.speech = "I found an event called " + res.title + ". Here is a full description: " + striptags(res.shortDescription.replace(/&nbsp;/gi, '').replace(/&ndash;/gi, '')).split(".")[0] + ". Follow the link for more information.";
+      body.displayText = "I found an event called " + res.title + ". Follow the link for more info: " + res.link;
       response.body = JSON.stringify(body);
       finalCallback(null, response);
     }, function() { // failure
